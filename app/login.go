@@ -6,6 +6,7 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -113,6 +114,13 @@ func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, 
 		secure = true
 	}
 
+	domain := ""
+	if *a.Config().ServiceSettings.AllowCookiesForSubdomains {
+		if siteURL, err := url.Parse(*a.Config().ServiceSettings.SiteURL); err == nil {
+			domain = siteURL.Hostname()
+		}
+	}
+
 	expiresAt := time.Unix(model.GetMillis()/1000+int64(maxAge), 0)
 	sessionCookie := &http.Cookie{
 		Name:     model.SESSION_COOKIE_TOKEN,
@@ -121,6 +129,7 @@ func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, 
 		MaxAge:   maxAge,
 		Expires:  expiresAt,
 		HttpOnly: true,
+		Domain:   domain,
 		Secure:   secure,
 	}
 
@@ -130,6 +139,7 @@ func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, 
 		Path:    "/",
 		MaxAge:  maxAge,
 		Expires: expiresAt,
+		Domain:  domain,
 		Secure:  secure,
 	}
 
