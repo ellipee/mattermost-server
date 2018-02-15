@@ -83,6 +83,22 @@ func (o *PostList) AddPost(post *Post) {
 	o.Posts[post.Id] = post
 }
 
+func (o *PostList) RemovePost(postId string) {
+	_, ok := o.Posts[postId]
+	if ok {
+		delete(o.Posts, postId)
+
+		var index int
+		for i, pID := range o.Order {
+			if pID == postId {
+				index = i
+				break
+			}
+		}
+		o.Order = append(o.Order[:index], o.Order[index+1:]...)
+	}
+}
+
 func (o *PostList) Extend(other *PostList) {
 	for _, postId := range other.Order {
 		if _, ok := o.Posts[postId]; !ok {

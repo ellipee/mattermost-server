@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/alecthomas/log4go"
 	"github.com/mattermost/mattermost-server/model"
 )
 
@@ -299,6 +300,13 @@ func searchPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 
 	posts, err := c.App.SearchPostsInTeam(terms, c.Session.UserId, c.Params.TeamId, isOrSearch)
+
+	for postID, post := range posts.Posts {
+		if !c.App.SessionHasPermissionToChannel(c.Session, post.ChannelId, model.PERMISSION_READ_CHANNEL) {
+			posts.RemovePost(postID)
+			log4go.Debug("Removed post '%v' from search results because of lack of '%v' permission for channel '%v'.", postID, model.PERMISSION_READ_CHANNEL.Id, post.ChannelId)
+		}
+	}
 
 	elapsedTime := float64(time.Since(startTime)) / float64(time.Second)
 	metrics := c.App.Metrics

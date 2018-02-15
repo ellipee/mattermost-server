@@ -90,3 +90,75 @@ func TestPostListSortByCreateAt(t *testing.T) {
 	assert.EqualValues(t, pl.Order[1], p1.Id)
 	assert.EqualValues(t, pl.Order[2], p2.Id)
 }
+
+func TestPostListRemovePost_ExistingPost(t *testing.T) {
+	pl := PostList{}
+
+	p1 := &Post{Id: NewId(), Message: NewId()}
+	pl.AddPost(p1)
+
+	p2 := &Post{Id: NewId(), Message: NewId()}
+	pl.AddPost(p2)
+
+	p3 := &Post{Id: NewId(), Message: NewId()}
+	pl.AddPost(p3)
+
+	pl.AddOrder(p1.Id)
+	pl.AddOrder(p2.Id)
+	pl.AddOrder(p3.Id)
+
+	// Verify setup
+	expected := 3
+	actual := len(pl.Posts)
+	if actual != expected {
+		t.Errorf("Test setup error, expected %v Posts in PostList instance, but got %v.", expected, actual)
+	}
+	if pl.Order[0] != p1.Id || pl.Order[1] != p2.Id || pl.Order[2] != p3.Id {
+		t.Error("Test setup error, PostList order not as expected.")
+	}
+
+	pl.RemovePost(p2.Id)
+
+	expected = 2
+	actual = len(pl.Posts)
+	if actual != expected {
+		t.Errorf("Expected %v Posts in PostList instance after invoking RemovePost, but got %v.", expected, actual)
+	}
+
+	actual = len(pl.Order)
+	if actual != expected {
+		t.Errorf("Expected %v items in Order in PostList instance after invoking RemovePost, but got %v.", expected, actual)
+	}
+
+	if pl.Order[0] != p1.Id {
+		t.Errorf("Expected '%v' to be at index 0 in PostList Order.", p1.Id)
+	}
+
+	if pl.Order[1] != p3.Id {
+		t.Errorf("Expected '%v' to be at index 1 in PostList Order.", p3.Id)
+	}
+}
+
+func TestPostListRemovePost_UnknownPostID(t *testing.T) {
+	pl := PostList{}
+	p1 := &Post{Id: NewId(), Message: NewId()}
+	pl.AddPost(p1)
+	pl.AddOrder(p1.Id)
+
+	// Test setup
+	expected := 1
+	actual := len(pl.Posts)
+	if actual != expected {
+		t.Errorf("Test setup error, expected %v Posts, got %v.", expected, actual)
+	}
+	actual = len(pl.Order)
+	if actual != expected {
+		t.Errorf("Test setup error, expected %v items in Order, got %v.", expected, actual)
+	}
+
+	pl.RemovePost("nonexistentid")
+
+	if len(pl.Posts) != expected || len(pl.Order) != expected {
+		t.Error("Expected no changes to PostList when invoking RemovePost with a non-existant post id.")
+	}
+}
